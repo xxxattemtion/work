@@ -34,9 +34,8 @@ int read_movies(char *filename) {
         return FILE_ERROR;
     }
 
-    g_movie_count = 0; // 重置电影计数
+    int read_count = 0; // 读取的电影数量
     char buffer[MAX_BUFFER_LEN];
-    int read_count = 0;
 
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         if (g_movie_count >= MAX_MOVIES) {
@@ -56,49 +55,17 @@ int read_movies(char *filename) {
         } else {
             strcpy(g_movie[g_movie_count].movie_title, buffer);
             g_movie_count++;
+            read_count++;
         }
-
-        read_count++;
     }
 
     fclose(file);
 
     if (read_count > 0) {
-        return g_movie_count; // 返回成功读取的电影数量
+        return read_count; // 返回成功读取的电影数量
     } else {
         return 0; // 没有电影被读取
     }
-}
-
-int main() {
-    // 读取电影的示例用法
-    char *filename = "movies.txt";
-    int result = read_movies(filename);
-
-    if (result == SUCCESS) {
-        printf("电影读取成功:\n");
-        for (int i = 0; i < g_movie_count; i++) {
-            printf("%s\n", g_movie[i].movie_title);
-        }
-    } else {
-        printf("错误: ");
-        switch (result) {
-            case BAD_MOVIE:
-                printf("无效的电影标题。\n");
-                break;
-            case TOO_MUCH_DATA:
-                printf("文件中的电影太多。\n");
-                break;
-            case FILE_ERROR:
-                printf("打开或读取文件时发生错误。\n");
-                break;
-            default:
-                printf("未知错误。\n");
-                break;
-        }
-    }
-
-    return 0;
 }
 
 
