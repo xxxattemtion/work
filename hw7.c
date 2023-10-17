@@ -1,36 +1,31 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <assert.h>
 
 #define MAX_TITLE_LEN 100
-#define MAX_BUFFER_LEN (MAX_TITLE_LEN * 2)
 #define MAX_SEQUELS 5
-#define MAX_MOVIES 50
+#define MAX_MOVIES 100
+#define MAX_BUFFER_LEN (MAX_TITLE_LEN * 2)
 
-enum genre {
-    ACTION,
-    ADVENTURE,
-    SCI_FI
+enum ErrorCodes {
+    SUCCESS,         // 成功
+    BAD_MOVIE,       // 无效的电影标题
+    TOO_MUCH_DATA,   // 文件中的电影太多
+    FILE_ERROR       // 文件错误
 };
 
-struct s_movie {
-    char movie_title[MAX_TITLE_LEN];
-    char sequels[MAX_SEQUELS][MAX_TITLE_LEN];
-    enum genre movie_genre;
-    int movie_len_minutes;
-    struct s_movie *sequel_ptrs[MAX_SEQUELS];
-};
+typedef struct s_movie {
+    char movie_title[MAX_TITLE_LEN];        // 电影标题
+    char sequels[MAX_SEQUELS][MAX_TITLE_LEN];  // 相关电影标题
+    enum genre movie_genre;                // 电影类型
+    int movie_len_minutes;                 // 电影时长（分钟）
+    struct s_movie *sequel_ptrs[MAX_SEQUELS];  // 相关电影指针
+} movie;
 
-typedef struct s_movie movie;
+movie g_movie[MAX_MOVIES];  // 存储电影的数组
+int g_movie_count = 0;      // 电影数量
 
-#define FILE_ERROR -1
-#define BAD_MOVIE -2
-#define TOO_MUCH_DATA -3
-
-movie g_movie[MAX_MOVIES];
-int g_movie_count = 0;
-
+// 读取电影信息
 int read_movies(char *filename) {
     assert(filename != NULL);
 
@@ -39,110 +34,68 @@ int read_movies(char *filename) {
         return FILE_ERROR;
     }
 
-    int movie_count = 0;
+    g_movie_count = 0; // 重置电影计数
     char buffer[MAX_BUFFER_LEN];
+    int read_count = 0;
+
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
-        if (movie_count >= MAX_MOVIES) {
+        if (g_movie_count >= MAX_MOVIES) {
             fclose(file);
             return TOO_MUCH_DATA;
         }
 
-        if (strlen(buffer) > MAX_BUFFER_LEN) {
-            fclose(file);
-            return BAD_MOVIE;
-        }
-
+        // 移除换行字符
         buffer[strcspn(buffer, "\n")] = '\0';
 
-        strncpy(g_movie[movie_count].movie_title, buffer, MAX_TITLE_LEN);
-        for (int i = 0; i < MAX_SEQUELS; i++) {
-            g_movie[movie_count].sequels[i][0] = '\0';
+        if (strlen(buffer) > MAX_TITLE_LEN) {
+            // 如果标题太长，则截断
+            strncpy(g_movie[g_movie_count].movie_title, buffer, MAX_TITLE_LEN);
+            g_movie[g_movie_count].movie_title[MAX_TITLE_LEN] = '\0';
+            return BAD_MOVIE;
+        } else {
+            strcpy(g_movie[g_movie_count].movie_title, buffer);
+            g_movie_count++;
         }
 
-        g_movie[movie_count].sequel_ptrs[0] = NULL;
-        movie_count++;
+        read_count++;
     }
 
     fclose(file);
-    g_movie_count = movie_count;
-    return movie_count; // Return the number of movies read
-}
 
-void link_movies() {
-    for (int i = 0; i < g_movie_count; i++) {
-        for (int j = 0; j < MAX_SEQUELS; j++) {
-            for (int k = 0; k < g_movie_count; k++) {
-                if (g_movie[i].sequels[j][0] == '\0') {
-                    // No more sequels, break the loop
-                    break;
-                }
-                if (strcmp(g_movie[i].sequels[j], g_movie[k].movie_title) == 0) {
-                    g_movie[i].sequel_ptrs[j] = &g_movie[k];
-                    break;
-                }
-            }
-        }
+    if (read_count > 0) {
+        return SUCCESS;
+    } else {
+        return FILE_ERROR;
     }
-}
-
-int find_longest_movie_chain(movie *the_movie) {
-    if (the_movie == NULL) {
-        return 0;
-    }
-
-    int max_minutes = the_movie->movie_len_minutes;
-
-    for (int i = 0; i < MAX_SEQUELS; i++) {
-        if (the_movie->sequel_ptrs[i] != NULL) {
-            int chain_minutes = the_movie->movie_len_minutes + find_longest_movie_chain(the_movie->sequel_ptrs[i]);
-            if (chain_minutes > max_minutes) {
-                max_minutes = chain_minutes;
-            }
-        }
-    }
-
-    return max_minutes;
 }
 
 int main() {
-    int result;
+    // 读取电影的示例用法
+    char *filename = "movies.txt";
+    int result = read_movies(filename);
 
-    // Test the read_movies function with different test data files
-    printf("Testing read_movies with bad_movie_MAX_BUFFER_LEN_2.txt...\n");
-    result = read_movies("test_data_files/bad_movie_MAX_BUFFER_LEN_2.txt");
-    switch (result) {
-        case BAD_MOVIE:
-            printf("Error: BAD_MOVIE\n");
-            break;
-        case TOO_MUCH_DATA:
-            printf("Error: TOO_MUCH_DATA\n");
-            break;
-        default:
-            printf("Read %d movies successfully\n", result);
-            break;
+    if (result == SUCCESS) {
+        printf("电影读取成功:\n");
+        for (int i = 0; i < g_movie_count; i++) {
+            printf("%s\n", g_movie[i].movie_title);
+        }
+    } else {
+        printf("错误: ");
+        switch (result) {
+            case BAD_MOVIE:
+                printf("无效的电影标题。\n");
+                break;
+            case TOO_MUCH_DATA:
+                printf("文件中的电影太多。\n");
+                break;
+            case FILE_ERROR:
+                printf("打开或读取文件时发生错误。\n");
+                break;
+            default:
+                printf("未知错误。\n");
+                break;
+        }
     }
-
-    printf("\nTesting read_movies with good_5.txt...\n");
-    result = read_movies("test_data_files/good_5.txt");
-    switch (result) {
-        case BAD_MOVIE:
-            printf("Error: BAD_MOVIE\n");
-            break;
-        case TOO_MUCH_DATA:
-            printf("Error: TOO_MUCH_DATA\n");
-            break;
-        default:
-            printf("Read %d movies successfully\n", result);
-            break;
-    }
-
-    link_movies();
-
-    printf("\nTesting link_movies() - 20 pts...\n");
-    // Add tests for link_movies function if needed
-
-    printf("\nTesting find_longest_chain() - 20 pts...\n");
-    // Add tests for find_longest_chain function if needed
 
     return 0;
 }
