@@ -66,7 +66,7 @@ int read_movies(char *filename) {
     if (read_count > 0) {
         return g_movie_count; // 返回成功读取的电影数量
     } else {
-        return FILE_ERROR;
+        return 0; // 没有电影被读取
     }
 }
 
