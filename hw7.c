@@ -65,13 +65,17 @@ int read_movies(char *filename) {
 
     fclose(file);
     g_movie_count = movie_count;
-    return movie_count;
+    return movie_count; // Return the number of movies read
 }
 
 void link_movies() {
     for (int i = 0; i < g_movie_count; i++) {
         for (int j = 0; j < MAX_SEQUELS; j++) {
             for (int k = 0; k < g_movie_count; k++) {
+                if (g_movie[i].sequels[j][0] == '\0') {
+                    // No more sequels, break the loop
+                    break;
+                }
                 if (strcmp(g_movie[i].sequels[j], g_movie[k].movie_title) == 0) {
                     g_movie[i].sequel_ptrs[j] = &g_movie[k];
                     break;
@@ -102,7 +106,9 @@ int find_longest_movie_chain(movie *the_movie) {
 
 int main() {
     int result;
-    
+
+    // Test the read_movies function with different test data files
+    printf("Testing read_movies with bad_movie_MAX_BUFFER_LEN_1.txt...\n");
     result = read_movies("bad_movie_MAX_BUFFER_LEN_1.txt");
     switch (result) {
         case BAD_MOVIE:
@@ -115,7 +121,8 @@ int main() {
             printf("Read %d movies successfully\n", result);
             break;
     }
-    
+
+    printf("\nTesting read_movies with bad_movie_MAX_MOVIES_1.txt...\n");
     result = read_movies("bad_movie_MAX_MOVIES_1.txt");
     switch (result) {
         case BAD_MOVIE:
@@ -129,6 +136,7 @@ int main() {
             break;
     }
 
+    printf("\nTesting read_movies with good_1.txt...\n");
     result = read_movies("good_1.txt");
     switch (result) {
         case BAD_MOVIE:
