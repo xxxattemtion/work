@@ -10,7 +10,7 @@ enum genre {
     ACTION,
     COMEDY,
     DRAMA,
-    // Add more genres as needed
+   
 };
 
 struct s_movie {
@@ -55,7 +55,7 @@ int read_movies(char *filename) {
             return BAD_MOVIE;
         }
 
-        // Truncate movie title if it's too long
+        
         g_movie[movie_index].movie_title[MAX_TITLE_LEN - 1] = '\0';
 
         int sequels_index = 1;
@@ -66,7 +66,7 @@ int read_movies(char *filename) {
             sequels_index++;
         }
 
-        // Initialize remaining sequels to empty strings
+        
         for (int i = sequels_index; i < MAX_SEQUELS; i++) {
             g_movie[movie_index].sequels[i][0] = '\0';
         }
@@ -102,7 +102,7 @@ int find_sequels(char *title, enum genre genre) {
 }
 
 int main() {
-    // Provide the filename for the movie list
+    
     char filename[] = "movie_list.txt";
 
     int read_result = read_movies(filename);
@@ -112,7 +112,7 @@ int main() {
         return 1;
     }
 
-    // Provide a title prefix and a genre for finding sequels
+    
     char title_prefix[] = "Movie";
     enum genre genre_to_find = ACTION;
 
