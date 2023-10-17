@@ -51,6 +51,7 @@ int read_movies(char *filename) {
             // 如果标题太长，则截断
             strncpy(g_movie[g_movie_count].movie_title, buffer, MAX_TITLE_LEN);
             g_movie[g_movie_count].movie_title[MAX_TITLE_LEN] = '\0';
+            fclose(file);
             return BAD_MOVIE;
         } else {
             strcpy(g_movie[g_movie_count].movie_title, buffer);
@@ -63,7 +64,7 @@ int read_movies(char *filename) {
     fclose(file);
 
     if (read_count > 0) {
-        return SUCCESS;
+        return g_movie_count; // 返回成功读取的电影数量
     } else {
         return FILE_ERROR;
     }
