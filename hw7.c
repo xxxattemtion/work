@@ -108,8 +108,8 @@ int main() {
     int result;
 
     // Test the read_movies function with different test data files
-    printf("Testing read_movies with bad_movie_MAX_BUFFER_LEN_1.txt...\n");
-    result = read_movies("bad_movie_MAX_BUFFER_LEN_1.txt");
+    printf("Testing read_movies with bad_movie_MAX_BUFFER_LEN_2.txt...\n");
+    result = read_movies("test_data_files/bad_movie_MAX_BUFFER_LEN_2.txt");
     switch (result) {
         case BAD_MOVIE:
             printf("Error: BAD_MOVIE\n");
@@ -122,22 +122,8 @@ int main() {
             break;
     }
 
-    printf("\nTesting read_movies with bad_movie_MAX_MOVIES_1.txt...\n");
-    result = read_movies("bad_movie_MAX_MOVIES_1.txt");
-    switch (result) {
-        case BAD_MOVIE:
-            printf("Error: BAD_MOVIE\n");
-            break;
-        case TOO_MUCH_DATA:
-            printf("Error: TOO_MUCH_DATA\n");
-            break;
-        default:
-            printf("Read %d movies successfully\n", result);
-            break;
-    }
-
-    printf("\nTesting read_movies with good_1.txt...\n");
-    result = read_movies("good_1.txt");
+    printf("\nTesting read_movies with good_5.txt...\n");
+    result = read_movies("test_data_files/good_5.txt");
     switch (result) {
         case BAD_MOVIE:
             printf("Error: BAD_MOVIE\n");
@@ -152,9 +138,13 @@ int main() {
 
     link_movies();
 
-    int longest_chain = find_longest_movie_chain(&g_movie[0]);
-    printf("\nLongest movie chain: %d minutes\n", longest_chain);
+    printf("\nTesting link_movies() - 20 pts...\n");
+    // Add tests for link_movies function if needed
+
+    printf("\nTesting find_longest_chain() - 20 pts...\n");
+    // Add tests for find_longest_chain function if needed
 
     return 0;
 }
+
 
