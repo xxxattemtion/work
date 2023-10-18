@@ -122,4 +122,3 @@ int find_sequels(char * title, enum genre movie_genre) {
 
 
 
-
