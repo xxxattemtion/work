@@ -1,71 +1,125 @@
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
+/*
+ * CS 240 - Fall 2023 - Suresh Jagannathan
+ * Please type your name in place of <YOUR NAME HERE> to verify that you will
+ * not cheat on this homework.
+ *
+ * Academic Honesty Pledge:
+ * I certify that this code is of my own original work, and not that of other
+ * students. online services, or other dishonesty. If I need help on homework,
+ * I will ask a TA or the professor.
+ *
+ * Signed, Jianjie Chen
+ */
 
-#define MAX_TITLE_LEN 100
-#define MAX_SEQUELS 5
-#define MAX_MOVIES 100
-#define MAX_BUFFER_LEN (MAX_TITLE_LEN * 2)
+#include "hw7.h"
 
-enum ErrorCodes {
-    SUCCESS,         // 成功
-    BAD_MOVIE,       // 无效的电影标题
-    TOO_MUCH_DATA,   // 文件中的电影太多
-    FILE_ERROR       // 文件错误
-};
+/*
+ * Read in a list of movies from the specified filename, store the movies in
+ * the global array g_movie_array. Return the number of movies
+ */
 
-typedef struct s_movie {
-    char movie_title[MAX_TITLE_LEN];        // 电影标题
-    char sequels[MAX_SEQUELS][MAX_TITLE_LEN];  // 相关电影标题
-    enum genre movie_genre;                // 电影类型
-    int movie_len_minutes;                 // 电影时长（分钟）
-    struct s_movie *sequel_ptrs[MAX_SEQUELS];  // 相关电影指针
-} movie;
-
-movie g_movie[MAX_MOVIES];  // 存储电影的数组
-int g_movie_count = 0;      // 电影数量
-
-// 读取电影信息
-int read_movies(char *filename) {
+int read_movies(char *filename){
     assert(filename != NULL);
 
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
-        return FILE_ERROR;
+        return NOT_FOUND;
     }
 
-    int read_count = 0; // 读取的电影数量
-    char buffer[MAX_BUFFER_LEN];
+    fseek(file, 0, SEEK_END);
+    unsigned long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
-    while (fgets(buffer, sizeof(buffer), file) != NULL) {
-        if (g_movie_count >= MAX_MOVIES) {
-            fclose(file);
-            return TOO_MUCH_DATA;
-        }
+    if (file_size == 0) {
+        fclose(file);
+        return NO_MOVIES;
+    }
+    g_movie_count = 0;
+    char line_buffer[MAX_BUFFER_LEN];
+    char tmp_buffer[MAX_BUFFER_LEN];
+    while (fgets(line_buffer, MAX_BUFFER_LEN, file) != NULL) {
 
-        // 移除换行字符
-        buffer[strcspn(buffer, "\n")] = '\0';
+        line_buffer[strcspn(line_buffer, "\n")] = '\0';
+        strcpy(tmp_buffer, line_buffer);
 
-        if (strlen(buffer) > MAX_TITLE_LEN) {
-            // 如果标题太长，则截断
-            strncpy(g_movie[g_movie_count].movie_title, buffer, MAX_TITLE_LEN);
-            g_movie[g_movie_count].movie_title[MAX_TITLE_LEN] = '\0';
-            fclose(file);
+        char *token = strtok(line_buffer, ":");
+
+        if (strlen(token) > MAX_BUFFER_LEN)
             return BAD_MOVIE;
+        strcpy(g_movie_array[g_movie_count].movie_title, token);
+        g_movie_array[g_movie_count].movie_title[MAX_TITLE_LEN - 1] = '\0';
+
+        token = strtok(NULL, ":");
+        if (token[0] == '+') {
+            int seq_count = 0;
+            char *sequel_token = strtok(token + 1, "+");
+            while (sequel_token != NULL) {
+                strcpy(g_movie_array[g_movie_count].sequels[seq_count], sequel_token);
+                seq_count++;
+                if (seq_count >= MAX_SEQUELS)
+                    return TOO_MUCH_DATA;
+                sequel_token = strtok(NULL, "+");
+            }
+            sequel_token = strtok(tmp_buffer, ":");
+            sequel_token = strtok(NULL, ":");
+            sequel_token = strtok(NULL, ":");
+            sequel_token = strtok(sequel_token, "|");
+            g_movie_array[g_movie_count].movie_genre = (enum genre) atoi(sequel_token);
+            sequel_token = strtok(NULL, "|");
+            g_movie_array[g_movie_count].movie_len_minutes = (int) atoi(sequel_token);
         } else {
-            strcpy(g_movie[g_movie_count].movie_title, buffer);
-            g_movie_count++;
-            read_count++;
+            if (token != NULL) {
+                token = strtok(token, "|");
+                g_movie_array[g_movie_count].movie_genre = (enum genre) atoi(token);
+                token = strtok(NULL, "|");
+                g_movie_array[g_movie_count].movie_len_minutes = (int) atoi(token);
+            }
+        }
+        ++g_movie_count;
+        if (g_movie_count >= MAX_MOVIES)
+            return TOO_MUCH_DATA;
+    }
+    fclose(file);
+    return g_movie_count;
+} /* read_movies() */
+
+
+/*
+ * Search through all the sequels of a given movie
+ * Return the longest movie in the given genre.
+ */
+
+int find_sequels(char * title, enum genre movie_genre) {
+    assert(title != NULL);
+    if (!g_movie_count) {
+        return NO_MOVIES;
+    }
+    if (movie_genre < ACTION || movie_genre > SCIFI) {
+        return BAD_MOVIE;
+    }
+    int longest_len = -1;
+    int isFound = 0;
+    char longest_movie[MAX_TITLE_LEN];
+
+    for (int i = 0; i < g_movie_count; i++) {
+        if ((!strcmp(g_movie_array[i].movie_title, title))
+            && (g_movie_array[i].movie_genre == movie_genre)
+            && (g_movie_array[i].movie_len_minutes > longest_len)) {
+            longest_len = g_movie_array[i].movie_len_minutes;
+            strcpy(longest_movie, g_movie_array[i].movie_title);
+            isFound = 1;
         }
     }
 
-    fclose(file);
-
-    if (read_count > 0) {
-        return read_count; // 返回成功读取的电影数量
-    } else {
-        return 0; // 没有电影被读取
+    if (longest_len == -1) {
+        return NOT_FOUND;
     }
-}
+    if (!isFound) {
+        return 0;
+    }
+    return longest_len;
+} /* find_sequels() */
+
+
 
 
